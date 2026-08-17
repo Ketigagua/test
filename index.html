@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="ka">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JavaScript ქვიზი</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      body {
+        background-color: #f4f7f6;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+      }
+      .quiz-container {
+        background: white;
+        width: 100%;
+        max-width: 800px;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 25px;
+      }
+      .question-card {
+        background: #fafafa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+      }
+      .question-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+      }
+      .options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .option-btn {
+        background: white;
+        border: 2px solid #dcdcdc;
+        padding: 12px 15px;
+        border-radius: 6px;
+        text-align: left;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .option-btn:hover:not([disabled]) {
+        border-color: #3498db;
+        background: #ebf5fb;
+      }
+      .option-btn.correct {
+        background-color: #d4edda !important;
+        border-color: #28a745 !important;
+        color: #155724;
+        font-weight: bold;
+      }
+      .option-btn.incorrect {
+        background-color: #f8d7da !important;
+        border-color: #dc3545 !important;
+        color: #721c24;
+      }
+      .explanation {
+        margin-top: 15px;
+        padding: 12px;
+        background-color: #e8f4f8;
+        border-left: 4px solid #3498db;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        color: #2c3e50;
+        display: none;
+      }
+      #result-btn {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      #result-btn:hover {
+        background: #219150;
+      }
+      #score-display {
+        margin-top: 25px;
+        padding: 20px;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        background: #2c3e50;
+        color: white;
+        border-radius: 8px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="quiz-container">
+      <h1>JavaScript ქვიზი (30 კითხვა)</h1>
+      <div id="quiz"></div>
+      <button id="result-btn" onclick="calculateScore()">
+        საბოლოო შედეგის ნახვა
+      </button>
+      <div id="score-display"></div>
+    </div>
+
+    <script>
+      const quizData = [
+        // ცვლადები & მონაცემთა ტიპები (1-6)
+        {
+          q: "1. რომელი ცვლადის გამოცხადებას აქვს Block Scope და მისი მნიშვნელობის ხელახლა მინიჭება შეუძლებელია?",
+          options: ["var", "let", "const", "ყველა ჩამოთვლილს"],
+          correct: 2,
+          exp: "const ქმნის ბლოკურ არეალს (Block Scope) და მასზე ახალი მნიშვნელობის მინიჭება (reassignment) შეცდომას იწვევს.",
+        },
+        {
+          q: "2. რას დააბრუნებს typeof NaN?",
+          options: ["'number'", "'NaN'", "'undefined'", "'object'"],
+          correct: 0,
+          exp: "JavaScript-ში NaN (Not a Number) ტექნიკურად რიცხვითი მონაცემთა ტიპის (number) ნაწილად ითვლება.",
+        },
+        {
+          q: "3. რა განსხვავებაა var-სა და let-ს შორის?",
+          options: [
+            "var-ს აქვს Function scope, ხოლო let-ს — Block scope",
+            "let-ის Hoisting არ ხდება, var-ის ხდება",
+            "var-ის მნიშვნელობის შეცვლა არ შეიძლება, let-ის შეიძლება",
+            "არანაირი განსხვავება არ არის",
+          ],
+          correct: 0,
+          exp: "var მოქმედებს ფუნქციის დონეზე (Function Scope), ხოლო let მოქმედებს მხოლოდ იმ ბლოკში {}, სადაც გამოცხადდა.",
+        },
+        {
+          q: "4. რომელია Primitive მონაცემთა ტიპი JavaScript-ში?",
+          options: ["Array", "Object", "String", "Function"],
+          correct: 2,
+          exp: "String, Number, Boolean, Undefined, Null, Symbol და BigInt პრიმიტიული ტიპებია. Array, Object და Function არაპრიმიტიულია.",
+        },
+        {
+          q: "5. რა იქნება შედეგი: console.log(typeof null)?",
+          options: ["'null'", "'undefined'", "'object'", "'string'"],
+          correct: 2,
+          exp: "ეს არის JavaScript-ის ცნობილი ისტორიული შეცდომა (bug), რის გამოც typeof null აბრუნებს 'object'-ს.",
+        },
+        {
+          q: "6. რა მოხდება const x = 10; x = 20; კოდის გაშვებისას?",
+          options: [
+            "x გახდება 20",
+            "დაბრუნდება undefined",
+            "ამოვარდება TypeError შეცდომა",
+            "x გახდება 10",
+          ],
+          correct: 2,
+          exp: "const ცვლადის მნიშვნელობის ხელახალი მინიჭება იწვევს TypeError შეცდომას.",
+        },
+
+        // მასივები & ობიექტები (7-10)
+        {
+          q: "7. როგორ მივწვდეთ ობიექტის user = { name: 'Ana' } name თვისებას?",
+          options: ["user[name]", "user.name", "user->name", "user(name)"],
+          correct: 1,
+          exp: "ობიექტის თვისებებთან წვდომა ხდება წერტილის (user.name) ან კვადრატული ფრჩხილების (user['name']) საშუალებით.",
+        },
+        {
+          q: "8. რომელი ინდექსიდან იწყება ელემენტების ათვლა მასივში?",
+          options: ["1-დან", "0-დან", "-1-დან", "ნებისმიერიდან"],
+          correct: 1,
+          exp: "JavaScript-ში (ისევე როგორც უმეტეს ენებში) მასივის ინდექსაცია იწყება 0-დან.",
+        },
+        {
+          q: "9. როგორ განვსაზღვროთ ობიექტში ახალი key-value წყვილი obj-ზე?",
+          options: [
+            "obj.add('key', 'value')",
+            "obj.key = 'value'",
+            "obj.append('key', 'value')",
+            "obj[key] == 'value'",
+          ],
+          correct: 1,
+          exp: "ობიექტში ახალი თვისების ჩამატება ხდება პირდაპირი მინიჭებით: obj.key = 'value' ან obj['key'] = 'value'.",
+        },
+        {
+          q: "10. რას დააბრუნებს Array.isArray({})?",
+          options: ["true", "false", "undefined", "TypeError"],
+          correct: 1,
+          exp: "{} არის ობიექტი და არა მასივი, ამიტომ Array.isArray აბრუნებს false-ს.",
+        },
+
+        // მასივის მეთოდები: push, pop, reverse, join, split (11-18)
+        {
+          q: "11. რას აკეთებს push() მეთოდი მასივში?",
+          options: [
+            "ამატებს ელემენტს მასივის დასაწყისში",
+            "ამატებს ელემენტს მასივის ბოლოში",
+            "შლის ბოლო ელემენტს",
+            "შლის პირველ ელემენტს",
+          ],
+          correct: 1,
+          exp: "push() ამატებს ერთ ან მეტ ელემენტს მასივის ბოლოში და აბრუნებს მასივის ახალ სიგრძეს.",
+        },
+        {
+          q: "12. რას აკეთებს pop() მეთოდი?",
+          options: [
+            "ამატებს ელემენტს ბოლოში",
+            "შლის და აბრუნებს მასივის ბოლო ელემენტს",
+            "შლის პირველ ელემენტს",
+            "აბრუნებს მასივის სიგრძეს",
+          ],
+          correct: 1,
+          exp: "pop() ამოიღებს (შლის) ბოლო ელემენტს მასივიდან და აბრუნებს ამ ამოღებულ ელემენტს.",
+        },
+        {
+          q: "13. რას აკეთებს reverse() მეთოდი?",
+          options: [
+            "აფასებს მასივის ელემენტებს",
+            "აბრუნებს მასივის ელემენტების მიმდევრობას უკუღმა",
+            "შლის შუა ელემენტებს",
+            "სორტირებას აკეთებს ანბანის მიხედვით",
+          ],
+          correct: 1,
+          exp: "reverse() მეთოდი ატრიალებს მასივის ელემენტების მიმდევრობას ადგილზე (in-place).",
+        },
+        {
+          q: "14. რას აკეთებს join('-') მეთოდი მასივზე ['a', 'b', 'c']?",
+          options: ["'a-b-c'", "['a-b-c']", "'abc'", "'a,b,c'"],
+          correct: 0,
+          exp: "join() აერთიანებს მასივის ყველა ელემენტს ერთ სტრინგად, გადაცემული გამყოფით (დელისიტერით).",
+        },
+        {
+          q: "15. რომელი მეთოდი გამოიყენება სტრინგის მასივად დასაშლელად?",
+          options: ["join()", "split()", "slice()", "push()"],
+          correct: 1,
+          exp: "split() არის სტრინგის მეთოდი, რომელიც ჭრის სტრინგს მითითებული სიმბოლოს მიხედვით და აბრუნებს მასივს.",
+        },
+        {
+          q: "16. რა იქნება შედეგი: 'hello'.split('')?",
+          options: [
+            "['hello']",
+            "['h', 'e', 'l', 'l', 'o']",
+            "'h e l l o'",
+            "undefined",
+          ],
+          correct: 1,
+          exp: "ცარიელი სტრინგით ('') split დაყოფს ტექსტს თითოეულ ასო-სიმბოლოდ მასივში.",
+        },
+        {
+          q: "17. ცვლის თუ არა reverse() მეთოდი ორიგინალ მასივს?",
+          options: [
+            "დიახ",
+            "არა",
+            "მხოლოდ const მასივებს",
+            "მხოლოდ let მასივებს",
+          ],
+          correct: 0,
+          exp: "reverse() არის mutating მეთოდი, ანუ ის ცვლის თავდაპირველ მასივს.",
+        },
+        {
+          q: "18. რას დააბრუნებს [1, 2, 3].pop()?",
+          options: ["[1, 2]", "3", "[3]", "2"],
+          correct: 1,
+          exp: "pop() აბრუნებს თავად ამოშლილ ელემენტს (ამ შემთხვევაში რიცხვ 3-ს).",
+        },
+
+        // forEach & map (19-22)
+        {
+          q: "19. რა არის ძირითადი განსხვავება map()-სა და forEach()-ს შორის?",
+          options: [
+            "map აბრუნებს ახალ მასივს, forEach აბრუნებს undefined-ს",
+            "forEach აბრუნებს ახალ მასივს, map არაფერს აბრუნებს",
+            "forEach უფრო სწრაფია ყოველთვის",
+            "არანაირი განსხვავება არ არის",
+          ],
+          correct: 0,
+          exp: "map() ქმნის და აბრუნებს ახალ მასივს შედეგებით, ხოლო forEach() უბრალოდ გადის ელემენტებზე და აბრუნებს undefined-ს.",
+        },
+        {
+          q: "20. რა იქნება შედეგი: [1, 2].map(x => x * 2)?",
+          options: ["[1, 2]", "[2, 4]", "4", "undefined"],
+          correct: 1,
+          exp: "map() თითოეულ ელემენტს გაამრავლებს 2-ზე და დააბრუნებს ახალ მასივს: [2, 4].",
+        },
+        {
+          q: "21. შეიძლება თუ არა forEach-ის ციკლის შეწყვეტა 'break' სიტყვით?",
+          options: [
+            "დიახ",
+            "არა",
+            "მხოლოდ თუ if იწერება",
+            "მხოლოდ try-catch-ში",
+          ],
+          correct: 1,
+          exp: "forEach-ის შიგნით 'break' ან 'continue' არ მუშაობს. ციკლის შესაწყვეტად ჩვეულებრივი for ციკლი უნდა გამოიყენოთ.",
+        },
+        {
+          q: "22. რას დააბრუნებს [1, 2, 3].forEach(x => x)?",
+          options: ["[1, 2, 3]", "undefined", "6", "null"],
+          correct: 1,
+          exp: "forEach() მეთოდის დაბრუნებული მნიშვნელობა (return value) ყოველთვის არის undefined.",
+        },
+
+        // DOM (23-26)
+        {
+          q: "23. რას აბრუნებს document.getElementById('myId') თუ ელემენტი ვერ მოიძებნა?",
+          options: ["undefined", "null", "false", "0"],
+          correct: 1,
+          exp: "თუ მითითებული ID-ით DOM-ში ელემენტი არ არსებობს, მეთოდი აბრუნებს null-ს.",
+        },
+        {
+          q: "24. რა განსხვავებაა textContent-სა და innerHTML-ს შორის?",
+          options: [
+            "innerHTML აღიქვამს HTML ტეგებს, textContent წერს მხოლოს სუფთა ტექსტს",
+            "textContent უფრო ნელია",
+            "innerHTML გამოიყენება მხოლოდ ინფუთებისთვის",
+            "განსხვავება არ არის",
+          ],
+          correct: 0,
+          exp: "innerHTML ამუშავებს HTML ტეგებს, ხოლო textContent უსაფრთხოდ სვამს მხოლოდ ტექსტს (HTML ტეგებს ტექსტად აღიქვამს).",
+        },
+        {
+          q: "25. რას აკეთებს appendChild() მეთოდი?",
+          options: [
+            "ამატებს ახალ ელემენტს მშობელი ელემენტის ბოლო შვილობილად",
+            "შლის ელემენტს DOM-იდან",
+            "ცვლის ელემენტის ID-ს",
+            "ამატებს ელემენტს დასაწყისში",
+          ],
+          correct: 0,
+          exp: "appendChild() ჩასვამს მითითებულ კვანძს (Node) მშობლის შვილების სიის ბოლოში.",
+        },
+        {
+          q: "26. როგორ შევქმნათ ახალი HTML ელემენტი JavaScript-ით?",
+          options: [
+            "document.createElement('div')",
+            "document.makeElement('div')",
+            "new HTMLElement('div')",
+            "document.appendChild('div')",
+          ],
+          correct: 0,
+          exp: "ახალი DOM ელემენტის შესაქმნელად გამოიყენება document.createElement('ტეგის_სახელი').",
+        },
+
+        // Fetch, then, catch (27-30)
+        {
+          q: "27. რას აბრუნებს fetch() ფუნქცია?",
+          options: ["JSON ობიექტს", "Promise-ს", "HTML დოკუმენტს", "String-ს"],
+          correct: 1,
+          exp: "fetch() არის ასინქრონული ფუნქცია, რომელიც აბრუნებს Promise-ს.",
+        },
+        {
+          q: "28. რისთვის გამოიყენება .catch() მეთოდი fetch()-თან მუშაობისას?",
+          options: [
+            "მონაცემების დასამუშავებლად",
+            "შეცდომების (errors) დასაჭერად და დასამუშავებლად",
+            "მოთხოვნის გაგზავნის დაყოვნებისთვის",
+            "JSON-ად გადასაყვანად",
+          ],
+          correct: 1,
+          exp: ".catch() გაეშვება მაშინ, თუ Promise უარყოფილია (Rejected), ანუ მოხდა რაიმე შეცდომა.",
+        },
+        {
+          q: "29. რას აკეთებს response.json() მეთოდი fetch-ის .then()-ში?",
+          options: [
+            "გადაყავს პასუხი JavaScript-ის ობიექტად/მასივად და აბრუნებს Promise-ს",
+            "სერვერზე აგზავნის მონაცემებს",
+            "შლის მონაცემებს",
+            "აბრუნებს სტრინგს",
+          ],
+          correct: 0,
+          exp: "response.json() კითხულობს პასუხის ნაკადს (stream) და გარდაქმნის მას JSON-იდან JS ობიექტად.",
+        },
+        {
+          q: "30. როდის გაეშვება .then() ჯაჭვში?",
+          options: [
+            "როდესაც Promise წარმატებით შესრულდება (Resolved)",
+            "მხოლოდ შეცდომის დროს",
+            "გვერდის ჩატვირთვამდე",
+            "ყოველ 5 წამში",
+          ],
+          correct: 0,
+          exp: ".then() მეთოდი სრულდება მაშინ, როდესაც Promise წარმატებით resolved გახდება.",
+        },
+      ];
+
+      const userAnswers = new Array(quizData.length).fill(null);
+
+      function renderQuiz() {
+        const quizContainer = document.getElementById("quiz");
+
+        quizData.forEach((item, index) => {
+          const card = document.createElement("div");
+          card.className = "question-card";
+
+          const title = document.createElement("div");
+          title.className = "question-title";
+          title.innerText = item.q;
+          card.appendChild(title);
+
+          const optionsDiv = document.createElement("div");
+          optionsDiv.className = "options-container";
+
+          const expDiv = document.createElement("div");
+          expDiv.className = "explanation";
+          expDiv.id = `exp-${index}`;
+          expDiv.innerText = `💡 ახსნა: ${item.exp}`;
+
+          item.options.forEach((opt, optIndex) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt;
+            btn.onclick = () =>
+              selectAnswer(index, optIndex, btn, optionsDiv, expDiv);
+            optionsDiv.appendChild(btn);
+          });
+
+          card.appendChild(optionsDiv);
+          card.appendChild(expDiv);
+          quizContainer.appendChild(card);
+        });
+      }
+
+      function selectAnswer(
+        qIndex,
+        selectedOptIndex,
+        selectedBtn,
+        optionsContainer,
+        expDiv,
+      ) {
+        if (userAnswers[qIndex] !== null) return; // არასავალდებულო: იცავს განმეორებითი დაჭერისგან
+
+        userAnswers[qIndex] = selectedOptIndex;
+        const correctIndex = quizData[qIndex].correct;
+        const buttons = optionsContainer.querySelectorAll(".option-btn");
+
+        buttons.forEach((btn, idx) => {
+          btn.disabled = true; // პასუხის არჩევის შემდეგ ღილაკების გათიშვა
+          if (idx === correctIndex) {
+            btn.classList.add("correct");
+          }
+        });
+
+        if (selectedOptIndex !== correctIndex) {
+          selectedBtn.classList.add("incorrect");
+        }
+
+        expDiv.style.display = "block";
+      }
+
+      function calculateScore() {
+        let score = 0;
+        userAnswers.forEach((ans, idx) => {
+          if (ans === quizData[idx].correct) {
+            score++;
+          }
+        });
+
+        const scoreDisplay = document.getElementById("score-display");
+        scoreDisplay.style.display = "block";
+        scoreDisplay.innerText = `თქვენი საბოლოო შედეგი: ${score} / ${quizData.length}`;
+
+        // ეკრანის ჩამოწევა შედეგთან
+        scoreDisplay.scrollIntoView({ behavior: "smooth" });
+      }
+
+      // ქვიზის ინიციალიზაცია
+      renderQuiz();
+    </script>
+  </body>
+</html>
